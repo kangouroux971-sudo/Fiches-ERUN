@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche e-primo</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+:root{--navy:#1F3A5F;--blue:#2E75B6;--light:#EAF1F8;--grey:#6B7280;--red:#C0392B;--redl:#FDECEA;--green:#1E8449;--greenl:#E9F7EF}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;font:14px/1.4 Calibri,Carlito,"Segoe UI",Arial,sans-serif;color:#1f2937;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.bar{max-width:190mm;margin:0 auto 10px;display:flex;gap:8px;justify-content:flex-end}
+.bar button{font:inherit;padding:6px 14px;border:1px solid var(--navy);background:#fff;color:var(--navy);border-radius:4px;cursor:pointer}
+.bar button.p{background:var(--navy);color:#fff}
+.fiche{max-width:190mm;margin:0 auto}
+.lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:700}
+.ban{display:grid;grid-template-columns:100px 1fr auto;gap:16px;align-items:center;background:var(--navy);color:#fff;padding:14px 18px}
+.ban .lbl{color:#BBD3EC}
+.logo{text-align:center}.logo img{width:72px;height:72px;object-fit:contain;background:#fff;display:block;margin:0 auto 4px}
+.logo small{font-size:10px;font-weight:700;color:#BBD3EC}
+.ban h1{margin:0;font-size:28px;line-height:1.1}.ban h2{margin:4px 0 0;font-size:15px;font-weight:400}
+.ref{text-align:right;font-weight:700;font-size:12px}
+.tag{display:inline-block;margin-top:6px;padding:1px 8px;background:#FFD966;color:var(--navy);font-size:11px;font-weight:700;text-transform:uppercase}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:10px 0;background:#fff}
+.meta div{background:var(--light);padding:8px 12px}.meta b{display:block;color:var(--navy);margin-top:2px}
+.box{padding:10px 14px;border-left:6px solid}
+.box.a{background:var(--redl);border-color:var(--red)}.box.s{background:var(--greenl);border-color:var(--green)}
+.box .t{font-size:17px;font-weight:700;margin:2px 0}.box.a .t,.box.a .lbl{color:var(--red)}.box.s .t,.box.s .lbl{color:var(--green)}
+h3{margin:16px 0 6px;padding-bottom:3px;border-bottom:2px solid var(--blue);color:var(--blue);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.st{display:grid;grid-template-columns:34px 1.3fr 1fr 1.1fr;border-bottom:1px solid #D5DCE4;break-inside:avoid}
+.st>div{padding:8px 10px}.st.h{background:var(--blue);color:#fff;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.st:nth-child(odd):not(.h){background:#F3F4F6}
+.n{color:var(--blue);font-size:18px;font-weight:700;text-align:center}.v{font-weight:700}.v:before{content:"☐ ";color:var(--blue);font-weight:400}
+.note{margin:8px 0;font-size:12px;font-style:italic;color:var(--grey)}
+.ck:before{content:"☐ ";color:var(--green)}
+.foot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;padding:8px 0;border-top:1px solid #D5DCE4;border-bottom:1px solid #D5DCE4;font-size:12px}
+.empty{padding:40px;text-align:center;color:var(--grey)}.ph{color:#9CA3AF;font-style:italic}
+@page{size:A4;margin:10mm}
+@media print{body{padding:0}.bar{display:none}}
+</style></head><body>
+<div class="bar"><button id="r">Actualiser</button><button class="p" onclick="window.print()">Imprimer / PDF</button></div>
+<div id="f" class="fiche"><div class="empty">Sélectionnez une fiche.</div></div>
+<script>
+const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const L=s=>E(s).split('\n').map(x=>'<div>'+x+'</div>').join('');
+const PH='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect x="2" y="2" width="68" height="68" fill="#fff" stroke="#9CA3AF" stroke-dasharray="4"/><text x="36" y="42" font-size="12" text-anchor="middle" fill="#9CA3AF" font-family="Arial">LOGO</text></svg>');
+const DIF={Facile:'● ○ ○ Facile',Moyen:'● ● ○ Moyen',Expert:'● ● ● Expert'};
+let cur=null;
+async function draw(r){
+  cur=r; const f=document.getElementById('f');
+  if(!r||!r.id){f.innerHTML='<div class="empty">Sélectionnez une fiche.</div>';return}
+  let steps=[];
+  try{const t=await grist.docApi.fetchTable('Etapes');
+    steps=t.id.map((id,i)=>({f:t.Fiche[i],o:t.Ordre[i]||0,v:t.Verification[i],w:t.OuRegarder[i],x:t.Resultat[i]}))
+      .filter(s=>s.f===r.id||s.f===r.Ref).sort((a,b)=>a.o-b.o);
+  }catch(e){steps=[]}
+  const logo=/^(https?:|data:)/.test(r.Logo||'')?r.Logo:PH;
+  f.innerHTML=`
+  <div class="ban"><div class="logo"><img src="${E(logo)}" alt=""><small>${E(r.Application)}</small></div>
+   <div><div class="lbl">Fiche de connaissance</div><h1>e-primo</h1><h2>${E(r.Titre)}</h2></div>
+   <div class="ref"><div class="lbl">Référence</div>${E(r.Ref)}<br><span class="tag">${E(r.Type)}</span></div></div>
+  <div class="meta"><div><span class="lbl">Domaine</span><b>${E(r.Titre)}</b></div>
+   <div><span class="lbl">Profil concerné</span><b>${E(r.Profil)}</b></div>
+   <div><span class="lbl">Difficulté</span><b>${E(DIF[r.Difficulte]||r.Difficulte)}</b></div>
+   <div><span class="lbl">Temps estimé</span><b>${E(r.Temps)}</b></div></div>
+  <div class="box a"><div class="lbl">⚠ Anomalie constatée</div><div class="t">${E(r.Anomalie)}</div>${r.Symptome?'<div>'+E(r.Symptome)+'</div>':''}</div>
+  <h3>Analyse · à suivre dans l’ordre</h3>
+  <div class="st h"><div></div><div>Vérification</div><div>Où regarder</div><div>Résultat / si KO</div></div>
+  ${steps.length?steps.map((s,i)=>`<div class="st"><div class="n">${i+1}</div><div class="v">${E(s.v)}</div><div>${E(s.w)}</div><div>${L(s.x)}</div></div>`).join(''):'<div class="st"><div></div><div class="ph">Ajoutez des étapes dans la table Etapes.</div><div></div><div></div></div>'}
+  ${r.Note?'<div class="note">'+E(r.Note)+'</div>':''}
+  <div class="box s" style="margin-top:14px"><div class="lbl">✔ Solution</div><div class="t">${E(r.Solution)}</div><div class="ck">${E(r.Controle)}</div></div>
+  <div class="foot"><div><span class="lbl">Mots-clés</span><br>${E(r.MotsCles)}</div><div><span class="lbl">Fiches liées</span><br>${E(r.FichesLiees)}</div>
+   <div><span class="lbl">Auteur · Mise à jour</span><br>${E(r.Auteur)} ${E(r.DateMaj&&r.DateMaj.constructor===Number?new Date(r.DateMaj*1000).toLocaleDateString('fr-FR'):r.DateMaj)}</div></div>`;
+}
+grist.ready({requiredAccess:'full'});
+grist.onRecord(draw);
+document.getElementById('r').onclick=()=>draw(cur);
+window.addEventListener('focus',()=>cur&&draw(cur));
+</script></body></html>
